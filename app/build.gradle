@@ -27,7 +27,7 @@ jacoco {
 
 android {
     buildToolsVersion "23.0.2"
-    compileSdkVersion 23
+    compileSdkVersion 22
 
     defaultConfig {
         applicationId "be.appfoundry.templateexample"
