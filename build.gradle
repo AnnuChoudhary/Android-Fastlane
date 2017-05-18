@@ -1,4 +1,6 @@
 //http://gradleplease.appspot.com/ can be used to check latest version
+
+apply plugin 'application'
 buildscript {
     ext {
         //ANDROID LIBS
