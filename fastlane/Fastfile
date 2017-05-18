@@ -1,92 +1,66 @@
-fastlane_version "1.89.0"
+# Customise this file, documentation can be found here:
+# https://github.com/fastlane/fastlane/tree/master/fastlane/docs
+# All available actions: https://docs.fastlane.tools/actions
+# can also be listed using the `fastlane actions` command
+
+# Change the syntax highlighting to Ruby
+# All lines starting with a # are ignored when running `fastlane`
+
+# If you want to automatically update fastlane if a new version is available:
+# update_fastlane
+
+# This is the minimum version number required.
+# Update this, if you use features of a newer version
+fastlane_version "2.31.0"
 
 default_platform :android
 
 platform :android do
   before_all do
-   #notification(subtitle: "Start android pipeline", message: "Ready to start fastlane")
+    # ENV["SLACK_URL"] = "https://hooks.slack.com/services/..."
   end
 
-  desc "Alpha release app. Run checks, test, assemble and upload to Fabric Beta"
-  lane :alpha do |options|
-    build_app(buildNumber: options[:buildNumber], input_apk_path: options[:input_apk_path], alias: options[:alias],
-      storepass: options[:storepass],keystore_path: options[:keystore_path], tsa: options[:tsa], signed_apk_path: options[:signed_apk_path], keypass: options[:keypass])
-
-    publish_fabric_beta(api_token: options[:api_token], build_secret: options[:build_secret])
-  end
-
-  desc "Clean assemble build with checks, test and reports"
-  private_lane :build_app do |options|
-    #Clean project directory
-    gradle(task: "clean")
-
-    assemble(buildNumber: options[:buildNumber])
-
-    sign_apk(keystore_path: options[:keystore_path], input_apk_path: options[:input_apk_path],
-      alias: options[:alias], storepass: options[:storepass], tsa: options[:tsa], signed_apk_path: options[:signed_apk_path], keypass: options[:keypass])
-
-    #Run lint, checkstyle, findbugs and pmd
-    gradle(task: "lint checkstyle findbugs pmd")
-    
-    #run tests and UI tests
-    #gradle(task: "test connectedAndroidTest")
+  desc "Runs all the tests"
+  lane :test do
     gradle(task: "test")
-
-    #Generate jacoco coverage reports for release and debug
-    jacoco_gradle(build_type: "Release")
-    jacoco_gradle(build_type: "Debug")
   end
 
-  private_lane :assemble do |options|
-    if options[:buildNumber]
-      UI.message("Since no build number was specified 0 was used")
-    end
+  desc "Submit a new Beta Build to Crashlytics Beta"
+  lane :beta do
+    gradle(task: "assembleRelease")
+    crashlytics
 
-    assemble_task = "assemble -PbuildNumber=\"#{ options[:buildNumber] ? options[:buildNumber] : "0" }\""
-    gradle(task: assemble_task)
+    # sh "your_script.sh"
+    # You can also use other beta testing services here
   end
 
-  #lane :assemble_signed_apk do |options|
-  #  if options[:buildNumber]
-  #    UI.message("Since no build number was specified 0 was used")
-  #  end
-  #
-  #  unless options[:service] && options[:account] || options[:password]
-  #    UI.error("Require password to unlock keystore to sign apk")
-  #  else options[:service] && options[:account]
-  #    pwd = "#{ options[:service] && options[:account] ? pw_from_keychain(service: options[:service], account: options[:account]) : "" }"
-  #    pwd = "#{ options[:password] && pwd.empty? ? options[:password] : pwd }"
-  #  end
-  #
-  #  assemble_task = "assemble -PbuildNumber=\"#{ options[:buildNumber] ? options[:buildNumber] : "0" }\" " +
-  #    "#{ !pwd.empty? ? "-PstorePassword=\"" + pwd + "\" -PkeyPassword=\"" + pwd + "\" " : "" }" +
-  #    "#{ options[:keyStorePath] ? "-PkeyStorePath=\"" + options[:keyStorePath] + "\"" : "" }"
-  #
-  #  gradle(task: assemble_task)
-  #end
-
-  desc "Distribute a new Beta via Crashlytics"
-  private_lane :publish_fabric_beta do |options|
-    if options[:api_token] && options[:build_secret]
-      api_token = options[:api_token]
-      build_secret = options[:build_secret]
-    else
-      api_token = pw_from_keychain(service: "crashlytics", account: "api-key")
-      build_secret = pw_from_keychain(service: "crashlytics", account: "build-secret")
-    end
-
-    unless api_token.empty? || build_secret.empty?
-       crashlytics(api_token: api_token, build_secret: build_secret)
-     else
-       UI.error("No api_token or build_secret were specified. Cannot upload to BETA.")
-    end 
+  desc "Deploy a new version to the Google Play"
+  lane :deploy do
+    gradle(task: "assembleRelease")
+    supply
   end
+
+  # You can define as many lanes as you want
 
   after_all do |lane|
-   #notification(subtitle: "Fastlane", message: "Successfully finished fast lane")
+    # This block is called, only if the executed lane was successful
+
+    # slack(
+    #   message: "Successfully deployed new App Update."
+    # )
   end
 
   error do |lane, exception|
-   #notification(subtitle: "Error in fast lane", message: exception.message)
+    # slack(
+    #   message: exception.message,
+    #   success: false
+    # )
   end
 end
+
+
+# More information about multiple platforms in fastlane: https://github.com/fastlane/fastlane/blob/master/fastlane/docs/Platforms.md
+# All available actions: https://docs.fastlane.tools/actions
+
+# fastlane reports which actions are used. No personal data is recorded. 
+# Learn more at https://github.com/fastlane/fastlane#metrics
