@@ -9,9 +9,6 @@
         android:name=".ExampleApp"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <meta-data
-            android:name="io.fabric.ApiKey"
-            android:value="5da368d2e96b0f501e572c7aefdedf78ec321104" />
         <activity android:name=".ui.master.MasterActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -21,6 +18,11 @@
             </intent-filter>
         </activity>
         <activity android:name=".ui.detail.DetailActivity"/>
-    </application>
+	      <meta-data
+          android:name="io.fabric.ApiKey"
+          android:value="53b0c735e2450048ddf2265bf34e7e694cacbe77"
+      />
 
+    </application>
+  <uses-permission android:name="android.permission.INTERNET" />
 </manifest>
